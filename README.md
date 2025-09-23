@@ -44,9 +44,9 @@ Include the neural network model diagram.
 
 ## PROGRAM
 
-**Name:** Keerthana S
+**Name:** MAHALAKSHMI.R
 
-**Register Number:** 212223240070
+**Register Number:** 212223230117
 
 ```py
 class Model(nn.Module):
