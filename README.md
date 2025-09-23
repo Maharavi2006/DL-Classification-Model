@@ -10,70 +10,100 @@ The Iris dataset consists of 150 samples from three species of iris flowers (Iri
 Include the neural network model diagram.
 
 ## DESIGN STEPS
-### STEP 1: 
 
-Write your own steps
+### STEP 1: Data Preprocessing
+- Load and clean the dataset.
+- Normalize/scale the features if necessary.
+- Split the dataset into training and testing sets.
 
-### STEP 2: 
+### STEP 2: Model Architecture
+- Define the structure of the neural network.
+- Choose appropriate layers (e.g., input, hidden, and output layers).
+- Specify activation functions for the layers.
 
+### STEP 3: Compilation
+- Initialize the model along with the criterion for loss calculation.
+- Choose an optimizer and set the learning rate.
+- Configure the model for training.
 
+### STEP 4: Training the Model
+- Pass the training data through the model.
+- Compute the loss and perform backpropagation.
+- Update the model parameters iteratively over several epochs.
 
-### STEP 3: 
+### STEP 5: Evaluation
+- Test the trained model on the test dataset.
+- Compute evaluation metrics such as accuracy, confusion matrix, and classification report.
+- Analyze the model performance.
 
-
-
-### STEP 4: 
-
-
-
-### STEP 5: 
-
-
-
-### STEP 6: 
-
-
-
+### STEP 6: Prediction and Results
+- Use the effective model for making new sample predictions.
+- Interpret the results and document the output.
+- Save the model for future inference.
 
 
 ## PROGRAM
 
-### Name:
+**Name:** Keerthana S
 
-### Register Number:
+**Register Number:** 212223240070
 
-```python
-class IrisClassifier(nn.Module):
-    def __init__(self, input_size):
-        super(IrisClassifier, self).__init__()
-        #Include your code here
+```py
+class Model(nn.Module):
+    def __init__(self, in_features=4, h1=8, h2=9, out_features=3):
+        super().__init__()
+        self.fc1 = nn.Linear(in_features,h1)
+        self.fc2 = nn.Linear(h1, h2)
+        self.out = nn.Linear(h2, out_features)
 
     def forward(self, x):
-        #Include your code here
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.out(x)
+        return x
+
+# Download the Iris dataset from UCI repository
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+df = pd.read_csv(url, header=None, names=["sepal_length", "sepal_width", "petal_length", "petal_width", "species"])
+
+# Map species to target values
+species_to_target = {"Iris-setosa": 0, "Iris-versicolor": 1, "Iris-virginica": 2}
+df["target"] = df["species"].map(species_to_target)
+
+# Display the first few rows
+df.head()
 
 
+epochs = 100
+losses = []
 
-# Initialize the Model, Loss Function, and Optimizer
+for i in range(epochs):
+    i+=1
+    y_pred = model.forward(X_train)
+    loss = criterion(y_pred, y_train)
+    losses.append(loss)
 
-def train_model(model, train_loader, criterion, optimizer, epochs):
-    #Include your code here
+    if i%10 == 1:
+        print(f'epoch: {i:2}  loss: {loss.item():10.8f}')
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+
 
 ```
 
 ### Dataset Information
-Include screenshot of the dataset.
+
+![alt text](iris_dataset.png)
 
 ### OUTPUT
 
-## Confusion Matrix
+![alt text](iris_dataset_with_mystery.png)
 
-Include confusion matrix here
 
-## Classification Report
-Include classification report here
 
-### New Sample Data Prediction
-Include your sample input and output here
 
 ## RESULT
-Include your result here
+A neural network classification model was successfully developed for the Iris dataset, achieving satisfactory performance in classifying iris species based on their features.
