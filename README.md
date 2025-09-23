@@ -10,100 +10,169 @@ The Iris dataset consists of 150 samples from three species of iris flowers (Iri
 Include the neural network model diagram.
 
 ## DESIGN STEPS
+### STEP 1: 
+Load the Iris dataset using a suitable library.
 
-### STEP 1: Data Preprocessing
-- Load and clean the dataset.
-- Normalize/scale the features if necessary.
-- Split the dataset into training and testing sets.
+### STEP 2: 
+Preprocess the data by handling missing values and normalizing features.
 
-### STEP 2: Model Architecture
-- Define the structure of the neural network.
-- Choose appropriate layers (e.g., input, hidden, and output layers).
-- Specify activation functions for the layers.
 
-### STEP 3: Compilation
-- Initialize the model along with the criterion for loss calculation.
-- Choose an optimizer and set the learning rate.
-- Configure the model for training.
+### STEP 3: 
+Split the dataset into training and testing sets.
 
-### STEP 4: Training the Model
-- Pass the training data through the model.
-- Compute the loss and perform backpropagation.
-- Update the model parameters iteratively over several epochs.
 
-### STEP 5: Evaluation
-- Test the trained model on the test dataset.
-- Compute evaluation metrics such as accuracy, confusion matrix, and classification report.
-- Analyze the model performance.
+### STEP 4: 
+Train a classification model using the training data.
 
-### STEP 6: Prediction and Results
-- Use the effective model for making new sample predictions.
-- Interpret the results and document the output.
-- Save the model for future inference.
+
+### STEP 5: 
+Evaluate the model on the test data and calculate accuracy.
+
+
+### STEP 6: 
+Display the test accuracy, confusion matrix, and classification report.
+
+
 
 
 ## PROGRAM
 
-**Name:** MAHALAKSHMI.R
+### Name:MAHALAKSHMI.R
 
-**Register Number:** 212223230117
+### Register Number:212223230117
 
-```py
-class Model(nn.Module):
-    def __init__(self, in_features=4, h1=8, h2=9, out_features=3):
-        super().__init__()
-        self.fc1 = nn.Linear(in_features,h1)
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from torch.utils.data import TensorDataset, DataLoader
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_iris
+
+iris = load_iris()
+X = iris.data
+y = iris.target
+
+df = pd.DataFrame(X, columns=iris.feature_names)
+df['target'] = y
+
+print("First 5 rows of dataset: \n", df.head())
+print("\nLast 5 rows of dataset:\n", df.tail())
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+X_train = torch.tensor(X_train, dtype=torch.float32)
+X_test = torch.tensor(X_test, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.long)
+y_test = torch.tensor(y_test, dtype=torch.long)
+
+train_dataset = TensorDataset(X_train, y_train)
+test_dataset = TensorDataset(X_test, y_test)
+
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+
+class IrisClassifier(nn.Module):
+    def __init__(self, input_size, h1, h2, output_size):
+        super(IrisClassifier, self).__init__()
+        self.fc1 = nn.Linear(input_size, h1)
         self.fc2 = nn.Linear(h1, h2)
-        self.out = nn.Linear(h2, out_features)
+        self.fc3 = nn.Linear(h2, output_size)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = self.out(x)
-        return x
+        return self.fc3(x)
 
-# Download the Iris dataset from UCI repository
-url = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
-df = pd.read_csv(url, header=None, names=["sepal_length", "sepal_width", "petal_length", "petal_width", "species"])
+def train_model(model, train_loader, criterion, optimizer, epochs):
+    for epoch in range(epochs):
+        model.train()
+        for X_batch, y_batch in train_loader:
+            optimizer.zero_grad()
+            outputs = model(X_batch)
+            loss = criterion(outputs, y_batch)
+            loss.backward()
+            optimizer.step()
+        if (epoch + 1) % 10 == 0:
+            print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss.item():.4f}')
 
-# Map species to target values
-species_to_target = {"Iris-setosa": 0, "Iris-versicolor": 1, "Iris-virginica": 2}
-df["target"] = df["species"].map(species_to_target)
+input_size = X_train.shape[1]
+output_size = len(iris.target_names)
+h1 = 10
+h2 = 11
 
-# Display the first few rows
-df.head()
-
+model = IrisClassifier(input_size=input_size, h1=h1, h2=h2, output_size=output_size)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.01)
 
 epochs = 100
-losses = []
+train_model(model, train_loader, criterion, optimizer, epochs)
 
-for i in range(epochs):
-    i+=1
-    y_pred = model.forward(X_train)
-    loss = criterion(y_pred, y_train)
-    losses.append(loss)
+model.eval()
+predictions, actuals = [], []
 
-    if i%10 == 1:
-        print(f'epoch: {i:2}  loss: {loss.item():10.8f}')
+with torch.no_grad():
+    for X_batch, y_batch in test_loader:
+        outputs = model(X_batch)
+        _, predicted = torch.max(outputs, 1)
+        predictions.extend(predicted.numpy())
+        actuals.extend(y_batch.numpy())
 
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
+accuracy = accuracy_score(actuals, predictions)
+conf_matrix = confusion_matrix(actuals, predictions)
+class_report = classification_report(actuals, predictions, target_names=iris.target_names)
 
 
+print(f'Test Accuracy: {accuracy:.2f}%\n')
+print("Classification Report:\n", class_report)
+print("\nConfusion Matrix:\n", conf_matrix)
+plt.figure(figsize=(6, 5))
+sns.heatmap(conf_matrix, annot=True, cmap='Blues', xticklabels=iris.target_names, yticklabels=iris.target_names, fmt='g')
+plt.xlabel("Predicted Labels")
+plt.ylabel("True Labels")
+plt.title("Confusion Matrix")
+plt.show()
+sample_input = X_test[5].unsqueeze(0)
+with torch.no_grad():
+    output = model(sample_input)
+    predicted_class_index = torch.argmax(output[0]).item()
+    predicted_class_label = iris.target_names[predicted_class_index]
+
+print(f'Predicted class for sample input: {predicted_class_label}')
+print(f'Actual class for sample input: {iris.target_names[y_test[5].item()]}')
 
 ```
 
 ### Dataset Information
+<img width="850" height="557" alt="image" src="https://github.com/user-attachments/assets/ea589a0b-3de1-4796-9085-c7c72bcaaa95" />
+<img width="307" height="201" alt="image" src="https://github.com/user-attachments/assets/183d9b30-942d-4b87-a57b-331c1b45c2cc" />
+<img width="202" height="19" alt="image" src="https://github.com/user-attachments/assets/8a886743-cb01-47bd-a733-359eeb47400c" />
 
-![alt text](iris_dataset.png)
 
 ### OUTPUT
 
-![alt text](iris_dataset_with_mystery.png)
+## Confusion Matrix
+<img width="632" height="625" alt="image" src="https://github.com/user-attachments/assets/8ccd15af-2d4a-43e3-baec-0bff9426fce4" />
 
 
 
+## Classification Report
+<img width="571" height="222" alt="image" src="https://github.com/user-attachments/assets/92f31e6a-07c0-4d04-aff3-e04429b7198e" />
+
+
+### New Sample Data Prediction
+<img width="772" height="226" alt="image" src="https://github.com/user-attachments/assets/a27e2e2b-81f9-4d93-b1b1-0063deaa0936" />
 
 ## RESULT
-A neural network classification model was successfully developed for the Iris dataset, achieving satisfactory performance in classifying iris species based on their features.
+Thus, a neural network classification model was successfully developed and trained using PyTorch
